@@ -5,10 +5,6 @@ date: "10/5/2017"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 Import data to R as data frame D1.
 
 ```{r Load Data}
@@ -19,41 +15,48 @@ D1 = read.csv("HMXPC13_DI_v2_5-14-14.csv", header = TRUE);
 
 DI stands for De-identified. That means personal information is removed usually for privacy protection.
 
-6. Total number of people who received certification: 17687.
+6. Total number of people who received certification in HarvardX/CS50x in 2012: 1287.
 ```{r Total N of Cert}
-n_cert = nrow(subset(D1, certified=="1"))
+n_cert = nrow(subset(D1, certified=="1" & course_id == "HarvardX/CS50x/2012"))
 ```
 
 7. Total number of people registered for HarvardX/CS50x from Columbia on October 15, 2012:
+
 There is no variable of "register date" or similar in the dataset, so I assume we should use "start_time_DI", though it is not necessarily the register date. Also, no people is from "Columbia" in the raw data, but from "Colombia".
 
-Therefore, I change the question to total number of people registered for HarvardX/CS50x/2012 from Colombia, and the number is 687. The code is below.
+Therefore, I change the question to total number of people registered for HarvardX/CS50x/2012 from Colombia on 2012-10-15, and the number is 10. The code is below.
 ```{r Total N HarvardX/CS50x from Columbia on 10/15/2012}
-n_CS50x_Colmb_10152012d = nrow(subset(D1, registered == 1 & course_id=="HarvardX/CS50x/2012" & final_cc_cname_DI=="Colombia"))
+n_CS50x_Colmb_10152012d = nrow(subset(D1, registered == 1 & course_id=="HarvardX/CS50x/2012" & final_cc_cname_DI=="Colombia" & start_time_DI == "2012-10-15"))
 ```
 
 8. I choose Germany:
-```{r}
-D2 = subset(D1, final_cc_cname_DI=="Germany")
+```{r Data of students from Germany}
+D2_all = subset(D1, final_cc_cname_DI=="Germany")
+D2 = subset(D2_all, select = c(userid_DI, start_time_DI, final_cc_cname_DI))
 ```
 
 9. Dateset D1 is too large to run spread on my laptop, so I spread D2 instead.
-I add rownum first to D2, then spread and then remove rownum. See the code below.
-Final dataset is in data frame D3
+
+I add the column "registered" first to D2, then remove duplicates, and finally spread. See the code below.
+
+Final dataset is in data frame D3.
+
 ```{r}
 library(tidyr)
 library(dplyr)
-DF = D2
+DF = D2_all
 D3_tmp = data.frame("user_id" = DF$userid_DI, 
                   "reg_date" = DF$start_time_DI,
                   "registered" = DF$registered)
-D3_tmp = mutate(D3_tmp, row = row_number())
-D3 = spread(data=D3_tmp, reg_date, registered)
-D3 = subset(D3, select = -c(row))
+# remove duplicates in D3_tmp
+D3_tmp2 = unique(D3_tmp)
+
+D3 = spread(data=D3_tmp2, reg_date, registered)
 ```
 
-10. Remove user_id in D3
+10. Make row names the student id and then Remove user_id in D3
 ```{r}
+row.names(D3) = D3$user_id
 D3 = subset(D3, select = -c(user_id))
 ```
 
@@ -67,12 +70,14 @@ M1 = data.matrix(D3)
 M2 = t(M1)
 ```
 
-13. If two students register at the same, M1 x M2 should give 1, therefore, we can calculate M3 = M1%*%M2
+13. If two students register at the same date, M1 x M2 should give 1, therefore, we can calculate M3 = M1%*%M2.
+
+However, my laptop cannot handle the computation. So I do not run it.
 ```{r}
 #M3 = M1%*%M2
 ```
 
 14. Convert the diagonal of M3 to NA
 ```{r}
-#diag(M3) =  0
+#diag(M3) =  NA
 ```
