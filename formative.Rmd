@@ -1,0 +1,78 @@
+---
+title: "Formative Test 1 for HUDK 4050 Core Methods in EDM"
+author: "Zhulin Yu"
+date: "10/5/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Import data to R as data frame D1.
+
+```{r Load Data}
+D1 = read.csv("HMXPC13_DI_v2_5-14-14.csv", header = TRUE);
+```
+
+5. What does the DI suffix that is appeneded to two of the variable names mean?
+
+DI stands for De-identified. That means personal information is removed usually for privacy protection.
+
+6. Total number of people who received certification: 17687.
+```{r Total N of Cert}
+n_cert = nrow(subset(D1, certified=="1"))
+```
+
+7. Total number of people registered for HarvardX/CS50x from Columbia on October 15, 2012:
+There is no variable of "register date" or similar in the dataset, so I assume we should use "start_time_DI", though it is not necessarily the register date. Also, no people is from "Columbia" in the raw data, but from "Colombia".
+
+Therefore, I change the question to total number of people registered for HarvardX/CS50x/2012 from Colombia, and the number is 687. The code is below.
+```{r Total N HarvardX/CS50x from Columbia on 10/15/2012}
+n_CS50x_Colmb_10152012d = nrow(subset(D1, registered == 1 & course_id=="HarvardX/CS50x/2012" & final_cc_cname_DI=="Colombia"))
+```
+
+8. I choose Germany:
+```{r}
+D2 = subset(D1, final_cc_cname_DI=="Germany")
+```
+
+9. Dateset D1 is too large to run spread on my laptop, so I spread D2 instead.
+I add rownum first to D2, then spread and then remove rownum. See the code below.
+Final dataset is in data frame D3
+```{r}
+library(tidyr)
+library(dplyr)
+DF = D2
+D3_tmp = data.frame("user_id" = DF$userid_DI, 
+                  "reg_date" = DF$start_time_DI,
+                  "registered" = DF$registered)
+D3_tmp = mutate(D3_tmp, row = row_number())
+D3 = spread(data=D3_tmp, reg_date, registered)
+D3 = subset(D3, select = -c(row))
+```
+
+10. Remove user_id in D3
+```{r}
+D3 = subset(D3, select = -c(user_id))
+```
+
+11. Convert data frame to matrix: M1
+```{r}
+M1 = data.matrix(D3)
+```
+
+12. Transport M1 to M2
+```{r}
+M2 = t(M1)
+```
+
+13. If two students register at the same, M1 x M2 should give 1, therefore, we can calculate M3 = M1%*%M2
+```{r}
+#M3 = M1%*%M2
+```
+
+14. Convert the diagonal of M3 to NA
+```{r}
+#diag(M3) =  0
+```
